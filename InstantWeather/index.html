@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#050816" />
+  <meta name="description" content="Instant Weather — Météo intelligente en temps réel pour toutes les communes françaises." />
+  <title>Instant Weather — Météo intelligente</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Atmospheric background layers ─────────────────────────── -->
+  <div class="bg-mesh" aria-hidden="true">
+    <span class="blob blob--cyan"></span>
+    <span class="blob blob--violet"></span>
+    <span class="blob blob--blue"></span>
+    <span class="blob blob--warm"></span>
+  </div>
+  <canvas id="particles" class="bg-particles" aria-hidden="true"></canvas>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-grain" aria-hidden="true"></div>
+  <div class="bg-vignette" aria-hidden="true"></div>
+
+  <!-- ── Top bar ──────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".4"/>
+        <circle cx="16" cy="16" r="9" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".7"/>
+        <circle cx="16" cy="16" r="3.5" fill="currentColor"/>
+        <path d="M16 2 V8 M16 24 V30 M2 16 H8 M24 16 H30" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+      </svg>
+      <div class="brand__name">
+        <span>INSTANT</span><span class="brand__name--accent">WEATHER</span>
+      </div>
+    </div>
+
+    <nav class="topbar__nav" aria-label="Sections">
+      <span class="topbar__crumb topbar__crumb--active">01 / Recherche</span>
+      <span class="topbar__crumb">02 / Conditions</span>
+      <span class="topbar__crumb">03 / Prévisions</span>
+    </nav>
+
+    <div class="topbar__status">
+      <span class="pulse" aria-hidden="true"></span>
+      <span>API LIVE</span>
+      <span class="topbar__clock" id="clock">00:00:00</span>
+    </div>
+  </header>
+
+  <!-- ── Main layout (no scroll) ──────────────────────────────── -->
+  <main class="stage">
+
+    <!-- LEFT — Hero + form -->
+    <section class="panel panel--left" aria-labelledby="hero-title">
+      <div class="panel__inner">
+        <div class="kicker">
+          <span class="kicker__dot"></span>
+          v 2.6 · Météo France · Temps réel
+        </div>
+
+        <h1 id="hero-title" class="hero-title">
+          <span class="line">La météo,</span>
+          <span class="line line--accent">réinventée<em class="deg">°</em></span>
+        </h1>
+
+        <p class="hero-sub">
+          Saisissez un code postal, sélectionnez votre commune et obtenez instantanément des prévisions précises, animées et intelligibles.
+        </p>
+
+        <form class="form" onsubmit="return false;" autocomplete="off">
+          <div class="field">
+            <label for="code-postal" class="field__label">
+              <span>01</span> Code postal
+            </label>
+            <div class="field__input">
+              <input
+                id="code-postal"
+                type="text"
+                inputmode="numeric"
+                pattern="\d{5}"
+                maxlength="5"
+                placeholder="44210"
+                aria-describedby="postal-hint"
+              />
+              <svg class="field__icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2 L12 22 M2 12 L22 12" stroke="currentColor" stroke-width="1" opacity=".4"/>
+                <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.2" fill="none"/>
+                <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+              </svg>
+            </div>
+            <p id="postal-hint" class="field__hint">5 chiffres — recherche automatique</p>
+          </div>
+
+          <div class="field">
+            <label for="communeSelect" class="field__label">
+              <span>02</span> Commune
+            </label>
+            <div class="field__input field__input--select">
+              <select id="communeSelect" disabled>
+                <option>— En attente du code postal —</option>
+              </select>
+              <svg class="field__chev" viewBox="0 0 12 8" aria-hidden="true">
+                <path d="M1 1 L6 6 L11 1" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <button id="validationButton" class="cta" disabled>
+            <span class="cta__bg"></span>
+            <span class="cta__label">Obtenir la météo</span>
+            <span class="cta__arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 12"><path d="M0 6 H22 M17 1 L22 6 L17 11" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </button>
+
+          <p id="form-error" class="form__error" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="suggestions">
+          <span class="suggestions__lbl">Essayez</span>
+          <button type="button" class="chip" data-cp="44210">44210 Pornic</button>
+          <button type="button" class="chip" data-cp="75001">75001 Paris</button>
+          <button type="button" class="chip" data-cp="13001">13001 Marseille</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT — Weather visualisation -->
+    <section class="panel panel--right" id="weather-panel" aria-live="polite">
+
+      <!-- IDLE state -->
+      <div class="idle" id="idle-state">
+        <div class="orb">
+          <div class="orb__ring orb__ring--1"></div>
+          <div class="orb__ring orb__ring--2"></div>
+          <div class="orb__ring orb__ring--3"></div>
+          <div class="orb__core">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <defs>
+                <radialGradient id="orbGrad" cx="35%" cy="35%">
+                  <stop offset="0%" stop-color="#7cf6ff"/>
+                  <stop offset="55%" stop-color="#4d7eff"/>
+                  <stop offset="100%" stop-color="#1a1f4a"/>
+                </radialGradient>
+              </defs>
+              <circle cx="50" cy="50" r="42" fill="url(#orbGrad)"/>
+              <ellipse cx="50" cy="50" rx="42" ry="14" stroke="rgba(255,255,255,.25)" stroke-width=".6" fill="none"/>
+              <ellipse cx="50" cy="50" rx="42" ry="28" stroke="rgba(255,255,255,.18)" stroke-width=".6" fill="none"/>
+              <ellipse cx="50" cy="50" rx="14" ry="42" stroke="rgba(255,255,255,.15)" stroke-width=".6" fill="none"/>
+              <circle cx="38" cy="40" r="3.5" fill="rgba(255,255,255,.4)"/>
+              <circle cx="32" cy="48" r="1.5" fill="rgba(255,255,255,.3)"/>
+            </svg>
+          </div>
+        </div>
+        <div class="idle__copy">
+          <span class="idle__lbl">Système en veille</span>
+          <h2 class="idle__title">En attente<br>d'une commune.</h2>
+          <p class="idle__hint">Les conditions météo s'afficheront ici dès la sélection.</p>
+        </div>
+        <ul class="idle__bullets">
+          <li><b>04</b> Métriques temps réel</li>
+          <li><b>7j</b> Prévisions étendues</li>
+          <li><b>GPS</b> Coordonnées précises</li>
+        </ul>
+      </div>
+
+      <!-- LOADING state -->
+      <div class="loading hidden" id="loading-state">
+        <div class="loader">
+          <div class="loader__bar"></div>
+          <div class="loader__bar"></div>
+          <div class="loader__bar"></div>
+        </div>
+        <p>Synchronisation des données atmosphériques…</p>
+      </div>
+
+      <!-- DATA state -->
+      <div class="dashboard hidden" id="dashboard-state">
+
+        <header class="dash-head">
+          <div class="dash-head__city">
+            <span class="dash-head__lbl">Localisation</span>
+            <h2 id="dash-city">—</h2>
+            <span class="dash-head__coord" id="dash-coord">—</span>
+          </div>
+          <div class="dash-head__now">
+            <span class="dash-head__lbl">Aujourd'hui</span>
+            <span id="dash-date">—</span>
+          </div>
+        </header>
+
+        <div class="dash-grid">
+
+          <article class="card card--hero">
+            <div class="card__corner card__corner--tl"></div>
+            <div class="card__corner card__corner--tr"></div>
+            <div class="card__corner card__corner--bl"></div>
+            <div class="card__corner card__corner--br"></div>
+
+            <div class="card__head">
+              <span class="tag">CONDITIONS ACTUELLES</span>
+              <span class="tag tag--ghost" id="dash-cond">—</span>
+            </div>
+            <div class="card__hero">
+              <div class="weather-icon" id="dash-icon"></div>
+              <div class="temp">
+                <span class="temp__max" id="dash-tmax">--</span>
+                <span class="temp__unit">°</span>
+                <span class="temp__min">/ <span id="dash-tmin">--</span>°</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card--metric" data-metric="rain">
+            <span class="card__lbl">Probabilité pluie</span>
+            <span class="card__val"><span id="m-rain">0</span><sub>%</sub></span>
+            <div class="bar"><i id="m-rain-bar"></i></div>
+            <span class="card__sub" id="m-rain-sub">Cumul : 0 mm</span>
+          </article>
+
+          <article class="card card--metric" data-metric="sun">
+            <span class="card__lbl">Ensoleillement</span>
+            <span class="card__val"><span id="m-sun">0</span><sub>h</sub></span>
+            <div class="bar"><i id="m-sun-bar"></i></div>
+            <span class="card__sub">Durée du jour</span>
+          </article>
+
+          <article class="card card--metric" data-metric="wind">
+            <span class="card__lbl">Vent</span>
+            <span class="card__val"><span id="m-wind">0</span><sub>km/h</sub></span>
+            <div class="compass">
+              <span class="compass__needle" id="m-wind-needle"></span>
+              <span class="compass__lbl">N</span>
+            </div>
+            <span class="card__sub" id="m-wind-sub">— °</span>
+          </article>
+
+          <article class="card card--forecast">
+            <div class="card__head">
+              <span class="tag">PRÉVISIONS · 7 JOURS</span>
+              <span class="tag tag--ghost">EXTENDED</span>
+            </div>
+            <ol class="forecast" id="forecast-list"></ol>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ── Bottom bar ───────────────────────────────────────────── -->
+  <footer class="bottombar">
+    <span class="bottombar__left">METEO-CONCEPT · GEO.API.GOUV.FR</span>
+    <span class="bottombar__center"><i></i><i></i><i></i><i></i><i></i></span>
+    <span class="bottombar__right" id="coord-readout">LAT —— · LON ——</span>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
