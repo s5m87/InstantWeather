@@ -48,8 +48,17 @@
 html, body {
   width: 100%;
   height: 100%;
-  /* Strict no-scroll */
+  /* Strict no-scroll on desktop */
   overflow: hidden;
+}
+
+@media (max-width: 720px) {
+  html, body {
+    overflow: auto;
+    overflow-x: hidden;
+    height: auto;
+    min-height: 100%;
+  }
 }
 
 body {
@@ -1030,11 +1039,17 @@ button { cursor: pointer; }
 
   .stage {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
+    min-height: calc(100dvh - var(--top-h) - var(--bot-h));
+  }
+
+  .panel--left {
+    min-height: 0;
   }
   .panel--left .panel__inner {
-    padding: 16px;
-    gap: 10px;
+    padding: 20px 16px;
+    gap: 12px;
   }
   .kicker { font-size: 9px; padding: 4px 10px; }
   .hero-title { font-size: clamp(28px, 8vw, 42px); }
@@ -1045,18 +1060,28 @@ button { cursor: pointer; }
   .field__input input, .field__input select { padding: 10px 40px 10px 14px; font-size: 14px; }
   .cta { padding: 12px 18px; font-size: 13px; }
 
-  .panel--right { padding: 14px; }
+  .panel--right { padding: 14px; min-height: 420px; }
+
+  /* Idle state */
+  .idle {
+    grid-template-rows: auto auto;
+    gap: 16px;
+    justify-items: center;
+  }
   .idle__bullets { display: none; }
   .idle__copy { position: static; max-width: none; text-align: center; }
   .idle__title { font-size: 22px; }
   .idle__hint { display: none; }
   .orb { width: clamp(120px, 32vw, 180px); }
 
+  /* Dashboard */
+  .dash-head { gap: 8px; }
   .dash-head h2 { font-size: 20px; }
   .dash-head__now { font-size: 11px; }
+  .dash-head__coord { font-size: 10px; }
   .dash-grid {
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1.3fr auto auto auto;
+    grid-template-rows: auto auto auto auto;
     grid-template-areas:
       "hero  hero"
       "rain  sun"
@@ -1070,20 +1095,89 @@ button { cursor: pointer; }
   .temp { font-size: clamp(40px, 14vw, 64px); }
   .compass { width: 44px; height: 44px; }
   .compass__needle { height: 14px; }
-  .forecast { gap: 4px; }
-  .forecast li { padding: 6px 2px; }
-  .fc-icon { width: 20px; height: 20px; }
+
+  /* Forecast: horizontal scroll on small screens */
+  .forecast {
+    grid-template-columns: repeat(7, minmax(56px, 1fr));
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 4px;
+  }
+  .forecast li {
+    padding: 8px 4px;
+    scroll-snap-align: start;
+    min-width: 56px;
+  }
+  .fc-icon { width: 22px; height: 22px; }
   .fc-temp { font-size: 11px; }
   .fc-rain { font-size: 8px; }
   .fc-day { font-size: 9px; }
   .card--forecast .card__head { margin-bottom: 4px; }
   .tag { font-size: 9px; padding: 2px 6px; }
+
+  /* Footer */
+  .bottombar {
+    position: relative;
+    grid-template-columns: 1fr auto;
+  }
+  .bottombar__right { display: none; }
+}
+
+/* Very small phones (< 380px) */
+@media (max-width: 380px) {
+  .brand__name { display: none; }
+  .hero-title { font-size: clamp(24px, 7vw, 34px); }
+  .panel--left .panel__inner { padding: 14px 12px; }
+  .forecast {
+    grid-template-columns: repeat(7, 50px);
+  }
+  .card__hero { gap: 10px; }
+  .temp { font-size: 36px; }
 }
 
 /* Tiny screens — drop the wind compass visuals */
-@media (max-height: 600px) {
+@media (max-height: 600px) and (min-width: 721px) {
   .hero-sub, .idle__hint { display: none; }
   .hero-title { font-size: clamp(32px, 4vw, 52px); }
+}
+
+/* Landscape mobile */
+@media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  .stage {
+    grid-template-columns: 1fr 1.2fr;
+    grid-template-rows: 1fr;
+    height: auto;
+    min-height: calc(100dvh - var(--top-h) - var(--bot-h));
+  }
+  .hero-title { font-size: clamp(22px, 4vw, 32px); }
+  .hero-sub, .kicker, .suggestions { display: none; }
+  .panel--left .panel__inner { padding: 12px; gap: 8px; }
+  .panel--right { padding: 10px; }
+  .dash-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "hero hero"
+      "rain sun"
+      "fcast fcast";
+  }
+  .card[data-metric="wind"] { display: none; }
+  .forecast { grid-template-columns: repeat(7, 1fr); }
+}
+
+/* Safe area insets for notched phones */
+@supports (padding: env(safe-area-inset-top)) {
+  .topbar {
+    padding-left: max(clamp(16px, 2vw, 28px), env(safe-area-inset-left));
+    padding-right: max(clamp(16px, 2vw, 28px), env(safe-area-inset-right));
+  }
+  .bottombar {
+    padding-left: max(clamp(16px, 2vw, 28px), env(safe-area-inset-left));
+    padding-right: max(clamp(16px, 2vw, 28px), env(safe-area-inset-right));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 /* Reduce motion preference */
